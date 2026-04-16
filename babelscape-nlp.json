@@ -1,0 +1,423 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "description": "This is the API for the Babelscape NLP Pipeline backend microservice.",
+        "version": "1.0.0",
+        "title": "NLP Pipeline Backend"
+    },
+    "servers": [
+        {
+            "url": "https://api.babelscape.com/v1/nlp-pipeline"
+        }
+    ],
+    "tags": [
+        {
+            "name": "NLP Pipeline",
+            "description": "Tokenization, Morphology, POS tagging, NER labeling"
+        }
+    ],
+    "paths": {
+        "/query": {
+            "post": {
+                "tags": [
+                    "NLP Pipeline"
+                ],
+                "summary": "Performs NLP analysis",
+                "description": "Performs NLP analysis on the input text.",
+                "operationId": "pipeline",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "language",
+                        "description": "The language to be used.",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/Language"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "text",
+                        "description": "The text to process",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "key",
+                        "description": "API key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExtractionResponse"
+                                },
+                                "example": {
+                                    "sentences": [
+                                        {
+                                            "rawText": "The fox jumped over Mike's fence",
+                                            "offset": {
+                                                "start": 0,
+                                                "end": 32
+                                            },
+                                            "tokens": [
+                                                {
+                                                    "index": 0,
+                                                    "absoluteOffset": {
+                                                        "start": 0,
+                                                        "end": 3
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 0,
+                                                        "end": 3
+                                                    },
+                                                    "rawText": "The",
+                                                    "pos": "DET",
+                                                    "morph": {
+                                                        "lemma": "the"
+                                                    }
+                                                },
+                                                {
+                                                    "index": 1,
+                                                    "absoluteOffset": {
+                                                        "start": 4,
+                                                        "end": 7
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 4,
+                                                        "end": 7
+                                                    },
+                                                    "rawText": "fox",
+                                                    "pos": "NOUN",
+                                                    "morph": {
+                                                        "lemma": "fox",
+                                                        "inflectionCategories": [
+                                                            "SINGULAR"
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "index": 2,
+                                                    "absoluteOffset": {
+                                                        "start": 8,
+                                                        "end": 14
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 8,
+                                                        "end": 14
+                                                    },
+                                                    "rawText": "jumped",
+                                                    "pos": "VERB",
+                                                    "morph": {
+                                                        "lemma": "jump",
+                                                        "inflectionCategories": [
+                                                            "PAST"
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "index": 3,
+                                                    "absoluteOffset": {
+                                                        "start": 15,
+                                                        "end": 19
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 15,
+                                                        "end": 19
+                                                    },
+                                                    "rawText": "over",
+                                                    "pos": "ADP",
+                                                    "morph": {
+                                                        "lemma": "over"
+                                                    }
+                                                },
+                                                {
+                                                    "index": 4,
+                                                    "absoluteOffset": {
+                                                        "start": 20,
+                                                        "end": 24
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 20,
+                                                        "end": 24
+                                                    },
+                                                    "rawText": "Mike",
+                                                    "pos": "PROPN",
+                                                    "morph": {
+                                                        "lemma": "Mike",
+                                                        "inflectionCategories": [
+                                                            "SINGULAR"
+                                                        ]
+                                                    },
+                                                    "label": "PER"
+                                                },
+                                                {
+                                                    "index": 5,
+                                                    "absoluteOffset": {
+                                                        "start": 24,
+                                                        "end": 26
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 24,
+                                                        "end": 26
+                                                    },
+                                                    "rawText": "'s",
+                                                    "pos": "PART",
+                                                    "morph": {
+                                                        "lemma": "'s"
+                                                    }
+                                                },
+                                                {
+                                                    "index": 6,
+                                                    "absoluteOffset": {
+                                                        "start": 27,
+                                                        "end": 32
+                                                    },
+                                                    "relativeOffset": {
+                                                        "start": 27,
+                                                        "end": 32
+                                                    },
+                                                    "rawText": "fence",
+                                                    "pos": "NOUN",
+                                                    "morph": {
+                                                        "lemma": "fence",
+                                                        "inflectionCategories": [
+                                                            "SINGULAR"
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "languageDetect": {
+                                        "iso": "EN",
+                                        "name": "English",
+                                        "isRightToLeft": false
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request"
+                    },
+                    "401": {
+                        "description": "Invalid key"
+                    },
+                    "422": {
+                        "description": "You do not have enough units left to process your request"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Language": {
+                "type": "string",
+                "description": "Language"
+            },
+            "POS": {
+                "type": "string",
+                "description": "Universal dependencies POS (might be concatenated with an underscore '_' in case of multi-word expressions)",
+                "enum": [
+                    "ADJ",
+                    "ADP",
+                    "ADV",
+                    "AUX",
+                    "CCONJ",
+                    "DET",
+                    "INTJ",
+                    "NOUN",
+                    "NUM",
+                    "PART",
+                    "PRON",
+                    "PROPN",
+                    "PUNCT",
+                    "SCONJ",
+                    "SYM",
+                    "VERB",
+                    "X"
+                ]
+            },
+            "NERLabel": {
+                "type": "string",
+                "description": "NER label",
+                "enum": [
+                    "PER",
+                    "ORG",
+                    "LOC",
+                    "ENTITY"
+                ]
+            },
+            "InflectionCategory": {
+                "type": "string",
+                "description": "Inflection category.",
+                "example": [
+                    "FIRST_PERSON",
+                    "SINGULAR",
+                    "SIMPLE_PAST"
+                ]
+            },
+            "ExtractionResponse": {
+                "type": "object",
+                "properties": {
+                    "sentences": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Sentence"
+                        }
+                    },
+                    "languageDetect": {
+                        "$ref": "#/components/schemas/LanguageDetection"
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "Service version",
+                        "example": "1.0.0"
+                    },
+                    "processTime": {
+                        "type": "object",
+                        "description": "Processing time in milliseconds for each component of the pipeline (and overall)"
+                    }
+                }
+            },
+            "Sentence": {
+                "type": "object",
+                "properties": {
+                    "rawText": {
+                        "type": "string",
+                        "description": "Raw text"
+                    },
+                    "offset": {
+                        "$ref": "#/components/schemas/Offset"
+                    },
+                    "tokens": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Token"
+                        }
+                    }
+                }
+            },
+            "Offset": {
+                "type": "object",
+                "description": "Represents the absolute indices where the given object starts and ends in the original text",
+                "properties": {
+                    "start": {
+                        "type": "integer"
+                    },
+                    "end": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "LanguageDetection": {
+                "type": "object",
+                "properties": {
+                    "iso": {
+                        "type": "string",
+                        "description": "ISO value of the language",
+                        "example": "EN"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the language",
+                        "example": "English"
+                    },
+                    "rightToLeft": {
+                        "type": "boolean",
+                        "description": "If the language is right to left",
+                        "example": "false"
+                    }
+                }
+            },
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "index": {
+                        "type": "integer",
+                        "description": "Token index"
+                    },
+                    "rawText": {
+                        "type": "string",
+                        "description": "Token raw text"
+                    },
+                    "absoluteOffset": {
+                        "$ref": "#/components/schemas/Offset"
+                    },
+                    "relativeOffset": {
+                        "$ref": "#/components/schemas/Offset"
+                    },
+                    "lemma": {
+                        "type": "string",
+                        "description": "Lemma"
+                    },
+                    "pos": {
+                        "$ref": "#/components/schemas/POS"
+                    },
+                    "morph": {
+                        "$ref": "#/components/schemas/MorphEntry"
+                    },
+                    "label": {
+                        "$ref": "#/components/schemas/NERLabel"
+                    }
+                }
+            },
+            "MorphEntry": {
+                "type": "object",
+                "properties": {
+                    "currentInflection": {
+                        "$ref": "#/components/schemas/InflectionEntry"
+                    },
+                    "inflections": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/InflectionEntry"
+                        }
+                    }
+                }
+            },
+            "InflectionEntry": {
+                "type": "object",
+                "properties": {
+                    "forms": {
+                        "type": "string",
+                        "description": "Forms"
+                    },
+                    "inflectionCategories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/InflectionCategory"
+                        }
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "integer",
+                        "description": "Response HTTP status code"
+                    },
+                    "error": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
