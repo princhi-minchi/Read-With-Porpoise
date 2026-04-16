@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "fetch-mcp"]
+    },
+    "cloudflare-bindings": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://bindings.mcp.cloudflare.com/mcp"]
+    },
+    "cloudflare-docs": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://docs.mcp.cloudflare.com/mcp"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless", "--browser=chromium"]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.supabase.com/mcp?project_ref=vpodzuqkbamvrgonmbtr"]
+    }
+  }
+}
