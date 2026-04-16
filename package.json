@@ -1,0 +1,5 @@
+{
+  "name": "read-with-porpoise",
+  "private": true,
+  "workspaces": ["extension", "dashboard"]
+}

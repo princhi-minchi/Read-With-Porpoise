@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Lock file (workspaces use individual lockfiles)
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db

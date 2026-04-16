@@ -1,0 +1,16 @@
+export const POS_COLORS: Record<string, { bg: string; text: string }> = {
+  NOUN:  { bg: "#BFDBFE", text: "#1E3A5F" },
+  VERB:  { bg: "#FED7AA", text: "#7C2D12" },
+  AUX:   { bg: "#FDE68A", text: "#78350F" },
+  ADJ:   { bg: "#BBF7D0", text: "#14532D" },
+  ADV:   { bg: "#99F6E4", text: "#134E4A" },
+  DET:   { bg: "#E9D5FF", text: "#4C1D95" },
+  PRON:  { bg: "#FBCFE8", text: "#831843" },
+  ADP:   { bg: "#E2E8F0", text: "#1E293B" },
+  CCONJ: { bg: "#E5E7EB", text: "#1F2937" },
+  SCONJ: { bg: "#E5E7EB", text: "#1F2937" },
+  PROPN: { bg: "#C7D2FE", text: "#1E1B4B" },
+  NUM:   { bg: "#FEF9C3", text: "#713F12" },
+  PART:  { bg: "#F1F5F9", text: "#475569" },
+  INTJ:  { bg: "#FCE7F3", text: "#831843" },
+};
