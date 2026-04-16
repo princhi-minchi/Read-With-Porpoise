@@ -8,22 +8,28 @@ All Postgres tables, RLS policies, database functions, and auth configuration in
 
 - Guide 01 complete.
 - A Supabase project created at [supabase.com](https://supabase.com). Free tier is sufficient.
-- You have the following values from your Supabase project settings (Settings → API):
-  - Project URL (format: `https://xxxxxxxxxxxx.supabase.co`)
-  - `anon` public key
-  - `service_role` secret key
+- The Supabase MCP server is connected (`mcp__supabase__*` tools available).
 
-## Human Steps Required
+## MCP Tools Used in This Guide
 
-This guide requires you to manually run SQL in the Supabase SQL editor and configure Auth providers. The AI cannot do this — you must do it yourself.
+| Tool | Purpose |
+|---|---|
+| `mcp__supabase__apply_migration` | Run SQL migrations against the project |
+| `mcp__supabase__list_tables` | Verify tables were created |
+| `mcp__supabase__execute_sql` | Run verification queries |
+| `mcp__supabase__get_project_url` | Retrieve the project URL for env vars |
+| `mcp__supabase__get_publishable_keys` | Retrieve the anon key for env vars |
+| `mcp__supabase__generate_typescript_types` | Generate TypeScript types from the schema |
 
-**How to open the SQL editor**: Supabase Dashboard → SQL Editor → New Query
+> **Human step required — Google Auth only**: Configuring auth providers requires the Supabase dashboard UI. All SQL steps below are handled by MCP.
 
 ---
 
 ## Step 1 — Enable Extensions
 
-Run in the SQL editor:
+Apply migration using `mcp__supabase__apply_migration` with:
+- **name**: `enable_extensions`
+- **query**:
 
 ```sql
 create extension if not exists "uuid-ossp";
@@ -32,6 +38,10 @@ create extension if not exists "uuid-ossp";
 ---
 
 ## Step 2 — Create `user_stats` Table
+
+Apply migration using `mcp__supabase__apply_migration` with:
+- **name**: `create_user_stats`
+- **query**:
 
 ```sql
 create table public.user_stats (
@@ -63,6 +73,10 @@ create policy "Users can insert own stats"
 ---
 
 ## Step 3 — Create `saved_words` Table
+
+Apply migration using `mcp__supabase__apply_migration` with:
+- **name**: `create_saved_words`
+- **query**:
 
 ```sql
 create table public.saved_words (
@@ -108,6 +122,10 @@ create index saved_words_next_review_idx on public.saved_words(user_id, next_rev
 
 ## Step 4 — Create `lemma_cache` Table
 
+Apply migration using `mcp__supabase__apply_migration` with:
+- **name**: `create_lemma_cache`
+- **query**:
+
 ```sql
 create table public.lemma_cache (
   id uuid default uuid_generate_v4() primary key,
@@ -126,7 +144,9 @@ This table has no RLS — it is read/written only from server-side API routes us
 
 ## Step 5 — Create the New User Trigger
 
-Automatically creates a `user_stats` row whenever a new user signs up:
+Apply migration using `mcp__supabase__apply_migration` with:
+- **name**: `create_new_user_trigger`
+- **query**:
 
 ```sql
 create or replace function public.handle_new_user()
@@ -147,7 +167,9 @@ create trigger on_auth_user_created
 
 ## Step 6 — Create the Stats Update Function
 
-Atomically increments XP, updates level, manages streak, and counts saved words:
+Apply migration using `mcp__supabase__apply_migration` with:
+- **name**: `create_increment_stats_fn`
+- **query**:
 
 ```sql
 create or replace function public.increment_user_stats(user_id_param uuid)
@@ -172,9 +194,15 @@ $$;
 
 ---
 
-## Step 7 — Configure Google Auth
+## Step 7 — Generate TypeScript Types
 
-In the Supabase dashboard:
+Call `mcp__supabase__generate_typescript_types` and save the output to `dashboard/lib/database.types.ts`. This file will be referenced by API routes in Guide 03.
+
+---
+
+## Step 8 — Configure Google Auth
+
+**Human step — must be done in the Supabase dashboard UI.**
 
 1. Go to **Authentication → Providers → Google**
 2. Toggle **Enable** to on
@@ -186,9 +214,18 @@ In the Supabase dashboard:
 
 ---
 
-## Step 8 — Fill In Environment Variable Values
+## Step 9 — Fill In Environment Variable Values
 
-Now that your Supabase project is configured, fill in the values in `dashboard/.env.local`:
+Use MCP to retrieve the values, then write them to the env files.
+
+**Retrieve via MCP:**
+- Call `mcp__supabase__get_project_url` → use the result as `NEXT_PUBLIC_SUPABASE_URL`
+- Call `mcp__supabase__get_publishable_keys` → use the `anon` key as `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+**Human step — service role key only:**
+- Open Supabase Dashboard → Settings → API → copy **service_role** secret → use as `SUPABASE_SERVICE_ROLE_KEY`
+
+Fill in `dashboard/.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
@@ -209,16 +246,14 @@ PLASMO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 Complete all items before starting Guide 03.
 
-- [ ] In Supabase Table Editor: tables `saved_words`, `user_stats`, and `lemma_cache` are all visible.
-- [ ] Run this SQL — it should succeed (returns a row):
-  ```sql
-  select * from public.lemma_cache limit 1;
-  ```
-- [ ] Run this SQL — it should be blocked by RLS (returns 0 rows when run as anon):
+- [ ] Call `mcp__supabase__list_tables` — confirm `saved_words`, `user_stats`, and `lemma_cache` are all listed.
+- [ ] Call `mcp__supabase__execute_sql` with query `select * from public.lemma_cache limit 1;` — should succeed (0 rows is fine, no error).
+- [ ] Call `mcp__supabase__execute_sql` with:
   ```sql
   set role anon;
   select * from public.saved_words;
   reset role;
   ```
+  Should return 0 rows (RLS blocking anon access — correct behaviour).
 - [ ] In Supabase Dashboard → Authentication → Providers: Google provider shows as **Enabled**.
 - [ ] `dashboard/.env.local` has real values (not empty) for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.

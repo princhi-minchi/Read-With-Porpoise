@@ -24,11 +24,28 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 CF_ACCOUNT_ID=                # Cloudflare dashboard → right sidebar
 CF_API_TOKEN=                 # Cloudflare → My Profile → API Tokens → create token with KV:Read permission
-CF_KV_NS_VERB_IT=             # Cloudflare → Workers & Pages → KV → VERB_DB → namespace ID
+CF_KV_NS_VERB_IT=             # VERB_DB namespace ID — retrieve via MCP (see Step 0 below)
 CF_KV_NS_VERB_ES=             # SPANISH_VERB_DB namespace ID
 CF_KV_NS_REVERSE_IT=          # REVERSE_DB_V2 namespace ID
 CF_KV_NS_REVERSE_ES=          # SPANISH_REVERSE_DB namespace ID
 ```
+
+## Step 0 — Retrieve Cloudflare KV Namespace IDs via MCP
+
+The four `CF_KV_NS_*` values are namespace IDs that can be fetched without opening the Cloudflare dashboard.
+
+1. Call `mcp__cloudflare-bindings__set_active_account` with your `CF_ACCOUNT_ID` (found in the Cloudflare dashboard right sidebar).
+2. Call `mcp__cloudflare-bindings__kv_namespaces_list` — this returns all KV namespaces with their IDs and titles.
+3. Match the titles to populate `.env.local`:
+
+| `.env.local` key | KV namespace title |
+|---|---|
+| `CF_KV_NS_VERB_IT` | `VERB_DB` |
+| `CF_KV_NS_VERB_ES` | `SPANISH_VERB_DB` |
+| `CF_KV_NS_REVERSE_IT` | `REVERSE_DB_V2` |
+| `CF_KV_NS_REVERSE_ES` | `SPANISH_REVERSE_DB` |
+
+> **Note:** `CF_ACCOUNT_ID` and `CF_API_TOKEN` must still be obtained manually from the Cloudflare dashboard. The MCP server uses its own credentials to list namespaces, but the app's runtime KV access goes through the REST API using these env vars.
 
 ## Key Architecture Decisions
 
@@ -458,11 +475,14 @@ Run each test with the dev server running. Replace the example values with your 
 curl -X POST http://localhost:3000/api/nlp \
   -H "Content-Type: application/json" \
   -d '{"text":"mangiavo la pizza","language":"IT"}'
+```
 
-# Or paste the fetch call into the browser console on any tab
-fetch("http://localhost:3000/api/nlp", {
+Or use Playwright MCP to run fetch calls in the browser — call `mcp__playwright__browser_navigate` to open `http://localhost:3000`, then `mcp__playwright__browser_evaluate` with:
+```js
+fetch("/api/nlp", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ text: "mangiavo la pizza", language: "IT" })
-}).then(r => r.json()).then(console.log)
+}).then(r => r.json())
 ```
+This avoids CORS issues and lets you inspect the JSON response directly.

@@ -462,11 +462,13 @@ Dashboard runs at `http://localhost:3000`.
 
 Complete all items in order.
 
+> **Playwright MCP available**: Use `mcp__playwright__browser_navigate` to open pages and `mcp__playwright__browser_snapshot` to inspect rendered content instead of checking manually. For clicks, use `mcp__playwright__browser_click`. The Google OAuth step still requires human interaction.
+
 - [ ] `http://localhost:3000/login` loads a sign-in page with a "Continue with Google" button. No console errors.
-- [ ] Clicking "Continue with Google" opens a Google OAuth flow and, after sign-in, redirects to `http://localhost:3000/dashboard`.
+- [ ] Clicking "Continue with Google" opens a Google OAuth flow and, after sign-in, redirects to `http://localhost:3000/dashboard`. *(Human step — OAuth requires browser interaction.)*
 - [ ] `http://localhost:3000/dashboard` shows the stats cards (Level, XP, Streak, Words Saved). All values are numbers (not undefined or NaN). "Words Saved" starts at 0 if no words have been saved yet.
 - [ ] `http://localhost:3000/dashboard/words` shows either a "No words saved yet" message or a table of words if any were saved via the extension.
 - [ ] Use the extension (Guide 04) to save at least one word, then refresh `/dashboard/words` — the saved word appears in the table.
 - [ ] Delete the word using the Delete button — it disappears from the table immediately.
 - [ ] `http://localhost:3000/dashboard/review` shows either "All done! 🎉" (if no words are due) or a flashcard.
-- [ ] On a flashcard: click the card → translation appears. Click "Good" → card advances. In Supabase Table Editor, confirm the word's `next_review_at` has been updated to a future date and `review_interval_days` has changed.
+- [ ] On a flashcard: click the card → translation appears. Click "Good" → card advances. Verify via `mcp__supabase__execute_sql`: `select next_review_at, review_interval_days from public.saved_words limit 5;` — confirm `next_review_at` is a future date and `review_interval_days` has changed from the default of `1`.
