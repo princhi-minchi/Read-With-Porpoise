@@ -216,7 +216,7 @@ export default function WordsPage() {
         <a href="/dashboard" className="text-sm text-slate-500 hover:underline">← Back</a>
       </div>
       <div className="flex gap-2">
-        {["", "IT", "ES"].map((lang) => (
+        {["", "IT"].map((lang) => (
           <button
             key={lang}
             onClick={() => setLanguage(lang)}

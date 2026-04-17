@@ -25,9 +25,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 CF_ACCOUNT_ID=                # Cloudflare dashboard → right sidebar
 CF_API_TOKEN=                 # Cloudflare → My Profile → API Tokens → create token with KV:Read permission
 CF_KV_NS_VERB_IT=             # VERB_DB namespace ID — retrieve via MCP (see Step 0 below)
-CF_KV_NS_VERB_ES=             # SPANISH_VERB_DB namespace ID
 CF_KV_NS_REVERSE_IT=          # REVERSE_DB_V2 namespace ID
-CF_KV_NS_REVERSE_ES=          # SPANISH_REVERSE_DB namespace ID
 ```
 
 ## Step 0 — Retrieve Cloudflare KV Namespace IDs via MCP
@@ -41,9 +39,7 @@ The four `CF_KV_NS_*` values are namespace IDs that can be fetched without openi
 | `.env.local` key | KV namespace title |
 |---|---|
 | `CF_KV_NS_VERB_IT` | `VERB_DB` |
-| `CF_KV_NS_VERB_ES` | `SPANISH_VERB_DB` |
 | `CF_KV_NS_REVERSE_IT` | `REVERSE_DB_V2` |
-| `CF_KV_NS_REVERSE_ES` | `SPANISH_REVERSE_DB` |
 
 > **Note:** `CF_ACCOUNT_ID` and `CF_API_TOKEN` must still be obtained manually from the Cloudflare dashboard. The MCP server uses its own credentials to list namespaces, but the app's runtime KV access goes through the REST API using these env vars.
 
@@ -106,21 +102,16 @@ export async function createClient() {
 
 This file contains the full verb conjugation lookup algorithm. It queries Cloudflare KV via the REST API.
 
-**Cloudflare KV data structure:**
+**Cloudflare KV data structure (Italian only):**
 
-For Italian, the reverse-lookup (conjugated form → infinitive) uses the `REVERSE_DB_V2` namespace with 3 strategies tried in order:
+The reverse-lookup (conjugated form → infinitive) uses the `REVERSE_DB_V2` namespace with 3 strategies tried in order:
 - `it:rev:v2:surface:{first-2-chars}` — exact surface form
 - `it:rev:v2:norm:{first-2-chars}` — lowercased + NFC normalised
 - `it:rev:v2:accentless:{first-2-chars}` — accents stripped
 
-For Spanish, the reverse-lookup uses `SPANISH_REVERSE_DB` with 1 strategy:
-- `es:rev:norm:{first-2-chars}` — lowercased + NFC normalised
-
 Each shard value is a JSON object: `{ "wordform": ["infinitive1", ...] }`
 
-Verb data (full conjugation table) is stored in:
-- Italian: `VERB_DB` namespace, key `verb:{infinitive}`
-- Spanish: `SPANISH_VERB_DB` namespace, key `verb:{infinitive}`
+Verb data (full conjugation table) is stored in the `VERB_DB` namespace, key `verb:{infinitive}`.
 
 Value format: nested JSON `{ moods: { indicativo: { presente: ["io form", "tu form", ...] } } }`
 
@@ -173,44 +164,22 @@ async function reverseItLookup(wordForm: string): Promise<string[]> {
   return [];
 }
 
-async function reverseEsLookup(wordForm: string): Promise<string[]> {
-  const nsId = process.env.CF_KV_NS_REVERSE_ES!;
-  const form = normalize(wordForm);
-  const shardKey = `es:rev:norm:${getPrefix(form)}`;
-  const raw = await kvGet(nsId, shardKey);
-  if (!raw) return [];
-  const shard = JSON.parse(raw) as Record<string, string[]>;
-  return shard[form] ?? [];
-}
-
-async function getVerbData(
-  infinitive: string,
-  language: "IT" | "ES"
-): Promise<Record<string, unknown> | null> {
-  const nsId =
-    language === "IT"
-      ? process.env.CF_KV_NS_VERB_IT!
-      : process.env.CF_KV_NS_VERB_ES!;
-  const raw = await kvGet(nsId, `verb:${infinitive}`);
+async function getVerbData(infinitive: string): Promise<Record<string, unknown> | null> {
+  const raw = await kvGet(process.env.CF_KV_NS_VERB_IT!, `verb:${infinitive}`);
   if (!raw) return null;
   return JSON.parse(raw);
 }
 
 export async function lookupConjugation(
   wordForm: string,
-  language: "IT" | "ES"
+  language: string
 ): Promise<{ infinitive: string; conjugationTable: Record<string, unknown> } | null> {
-  const candidates =
-    language === "IT"
-      ? await reverseItLookup(wordForm)
-      : await reverseEsLookup(wordForm);
-
+  if (language !== "IT") return null;
+  const candidates = await reverseItLookup(wordForm);
   if (candidates.length === 0) return null;
-
   const infinitive = candidates[0];
-  const conjugationTable = await getVerbData(infinitive, language);
+  const conjugationTable = await getVerbData(infinitive);
   if (!conjugationTable) return null;
-
   return { infinitive, conjugationTable };
 }
 ```
@@ -331,7 +300,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "wordForm and language required" }, { status: 400 });
   }
 
-  const result = await lookupConjugation(wordForm, language as "IT" | "ES");
+  const result = await lookupConjugation(wordForm, language);
   if (!result) {
     return NextResponse.json({ error: "Conjugation not found" }, { status: 404 });
   }
@@ -463,9 +432,7 @@ Run each test with the dev server running. Replace the example values with your 
 
 - [ ] **Translate route**: `POST http://localhost:3000/api/translate` with body `{"text":"mangiavo la pizza","sourceLang":"IT"}` returns `{"translation":"I was eating the pizza"}` (exact wording may vary).
 
-- [ ] **Conjugate route (Italian)**: `POST http://localhost:3000/api/conjugate` with body `{"wordForm":"mangiavo","language":"IT"}` returns `{"infinitive":"mangiare","conjugationTable":{...}}` where `conjugationTable` contains nested mood/tense data.
-
-- [ ] **Conjugate route (Spanish)**: `POST http://localhost:3000/api/conjugate` with body `{"wordForm":"comía","language":"ES"}` returns `{"infinitive":"comer","conjugationTable":{...}}`.
+- [ ] **Conjugate route**: `POST http://localhost:3000/api/conjugate` with body `{"wordForm":"mangiavo","language":"IT"}` returns `{"infinitive":"mangiare","conjugationTable":{...}}` where `conjugationTable` contains nested mood/tense data.
 
 - [ ] **Words route**: `GET http://localhost:3000/api/words` returns `{"error":"Unauthorized"}` with status 401 (correct — no auth token provided).
 
