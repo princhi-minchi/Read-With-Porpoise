@@ -20,6 +20,27 @@ PLASMO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 PLASMO_PUBLIC_API_BASE_URL=http://localhost:3000
 ```
 
+## Chrome DevTools MCP Setup
+
+The verification checklist uses `mcp__chrome-devtools__*` tools to automate checks against the running Chrome instance where the extension is installed.
+
+**Required**: Launch Chrome with the remote debugging port enabled:
+
+```bash
+# macOS
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+
+# Windows
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+
+# Linux
+google-chrome --remote-debugging-port=9222
+```
+
+Then load the extension (Step 7) in this Chrome instance. All `mcp__chrome-devtools__*` calls in the checklist will target this instance.
+
+---
+
 ## Key Architecture
 
 **Two separate rendering layers — do not mix them:**
@@ -588,7 +609,7 @@ cd dashboard && npm run dev
 cd extension && npm run dev
 ```
 
-Then load in Chrome:
+Then load in Chrome (the same instance launched with `--remote-debugging-port=9222`):
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (toggle, top-right)
 3. Click **Load unpacked**
@@ -601,13 +622,61 @@ Then load in Chrome:
 
 Complete all items before starting Guide 05.
 
-- [ ] Extension loads in Chrome with no errors shown in `chrome://extensions`.
-- [ ] Navigate to any webpage containing Italian text (e.g., it.wikipedia.org). Highlight 3–10 words. The 🐬 button appears below the selection.
-- [ ] Click 🐬. A "Analyzing..." loading popup appears briefly. Then the sidebar slides in from the right.
-- [ ] The selected text on the page is replaced in-place with colour-coded boxes (blue for nouns, orange for verbs, green for adjectives, etc.).
-- [ ] The sidebar shows the DeepL English translation at the top.
-- [ ] The sidebar shows the same tokens as a clickable list below the translation.
-- [ ] Click a coloured box on the page → that token becomes bold/outlined in the sidebar token list.
-- [ ] Click a VERB token (orange box) → a conjugation table appears in the sidebar detail panel.
-- [ ] Click ✕ to close the sidebar → coloured boxes are removed and the original page text is restored exactly.
-- [ ] Click "Save Word" on any token → button turns green with "Saved ✓" (requires being signed into the dashboard first — see Guide 05).
+> **Chrome DevTools MCP available**: Use `mcp__chrome-devtools__navigate_page` to open pages, `mcp__chrome-devtools__take_snapshot` to inspect the DOM, `mcp__chrome-devtools__evaluate_script` to run JavaScript in the page context, `mcp__chrome-devtools__list_console_messages` to check for errors, and `mcp__chrome-devtools__list_network_requests` to verify API calls. Use `mcp__chrome-devtools__list_pages` first to get the active page ID. The Google OAuth step and the physical text-selection step still require human interaction.
+
+- [ ] Extension loads in Chrome with no errors.
+  - Open `chrome://extensions` manually and confirm no error badge on the Porpoise card.
+  - Use `mcp__chrome-devtools__list_console_messages` on any open tab to confirm no uncaught errors from the content script at injection time.
+
+- [ ] Navigate to Italian Wikipedia and confirm the content script loads cleanly.
+  ```
+  mcp__chrome-devtools__navigate_page → "https://it.wikipedia.org/wiki/Roma"
+  mcp__chrome-devtools__list_console_messages → confirm no errors from the extension
+  ```
+
+- [ ] The 🐬 button appears after a text selection. *(Human step — physical mouse drag required.)*
+  - After making a selection manually, use `mcp__chrome-devtools__take_snapshot` to confirm a `button[title="Analyze with Porpoise"]` node exists inside a shadow root.
+
+- [ ] Clicking 🐬 triggers both API calls.
+  - After clicking the button manually (or via `mcp__chrome-devtools__click` on the shadow host button if accessible), use:
+  ```
+  mcp__chrome-devtools__list_network_requests → confirm POST to /api/nlp and POST to /api/translate both appear with status 200
+  ```
+
+- [ ] The sidebar renders with translation and token list.
+  ```
+  mcp__chrome-devtools__take_snapshot → confirm shadow DOM contains the sidebar panel
+  mcp__chrome-devtools__evaluate_script → document.querySelector('[data-porpoise="annotated"]') !== null
+  ```
+  Returned value must be `true` — confirms in-page annotation spans were injected.
+
+- [ ] In-page token spans are present with correct colours.
+  ```
+  mcp__chrome-devtools__evaluate_script →
+    [...document.querySelectorAll('[data-porpoise="annotated"] span')].map(s => s.title)
+  ```
+  Should return an array of strings like `["NOUN · Roma", "VERB · essere", ...]`.
+
+- [ ] Clicking a VERB token (orange box) triggers the conjugation API call. *(Human step — click the orange span in page.)*
+  ```
+  mcp__chrome-devtools__list_network_requests → confirm POST to /api/conjugate appears
+  mcp__chrome-devtools__take_screenshot → visually confirm conjugation table rendered in sidebar
+  ```
+
+- [ ] Closing the sidebar restores original page text.
+  - Click ✕ manually or via `mcp__chrome-devtools__click` on the close button inside the shadow root.
+  ```
+  mcp__chrome-devtools__evaluate_script → document.querySelector('[data-porpoise="annotated"]') === null
+  ```
+  Must return `true` — confirms annotation container was removed and original text nodes restored.
+
+- [ ] No console errors at any point during the flow.
+  ```
+  mcp__chrome-devtools__list_console_messages → filter for level "error" — list must be empty
+  ```
+
+- [ ] Click "Save Word" on any token → button turns green with "Saved ✓". *(Requires being signed into the dashboard first — see Guide 05.)*
+  ```
+  mcp__chrome-devtools__list_network_requests → confirm POST to /api/words with status 200 or 201
+  mcp__chrome-devtools__take_screenshot → visually confirm "Saved ✓" button state
+  ```

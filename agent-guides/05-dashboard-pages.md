@@ -460,15 +460,53 @@ Dashboard runs at `http://localhost:3000`.
 
 ## Verification Checklist
 
-Complete all items in order.
+Complete all items in order. All steps require you to interact with the browser manually at `http://localhost:3000`.
 
-> **Playwright MCP available**: Use `mcp__playwright__browser_navigate` to open pages and `mcp__playwright__browser_snapshot` to inspect rendered content instead of checking manually. For clicks, use `mcp__playwright__browser_click`. The Google OAuth step still requires human interaction.
+- [ ] `/login` loads with no errors.
+  1. Open `http://localhost:3000/login` in your browser.
+  2. Confirm the heading **"Read With Porpoise 🐬"** and a **"Continue with Google"** button are visible.
+  3. Open DevTools (F12) → Console tab. Confirm there are no red errors.
 
-- [ ] `http://localhost:3000/login` loads a sign-in page with a "Continue with Google" button. No console errors.
-- [ ] Clicking "Continue with Google" opens a Google OAuth flow and, after sign-in, redirects to `http://localhost:3000/dashboard`. *(Human step — OAuth requires browser interaction.)*
-- [ ] `http://localhost:3000/dashboard` shows the stats cards (Level, XP, Streak, Words Saved). All values are numbers (not undefined or NaN). "Words Saved" starts at 0 if no words have been saved yet.
-- [ ] `http://localhost:3000/dashboard/words` shows either a "No words saved yet" message or a table of words if any were saved via the extension.
-- [ ] Use the extension (Guide 04) to save at least one word, then refresh `/dashboard/words` — the saved word appears in the table.
-- [ ] Delete the word using the Delete button — it disappears from the table immediately.
-- [ ] `http://localhost:3000/dashboard/review` shows either "All done! 🎉" (if no words are due) or a flashcard.
-- [ ] On a flashcard: click the card → translation appears. Click "Good" → card advances. Verify via `mcp__supabase__execute_sql`: `select next_review_at, review_interval_days from public.saved_words limit 5;` — confirm `next_review_at` is a future date and `review_interval_days` has changed from the default of `1`.
+- [ ] Google OAuth sign-in works and redirects to `/dashboard`.
+  1. Click **"Continue with Google"** and complete the OAuth flow in the popup.
+  2. Confirm the browser lands on `http://localhost:3000/dashboard` after sign-in.
+
+- [ ] `/dashboard` shows stats cards with real numeric values.
+  1. On `/dashboard`, confirm four stat cards are visible: **Level**, **XP**, **Streak**, **Words Saved**.
+  2. Confirm none of the card values show `NaN`, `undefined`, or are blank.
+
+- [ ] `/dashboard/words` loads without errors.
+  1. Open `http://localhost:3000/dashboard/words`.
+  2. Confirm the page renders — either **"No words saved yet."** or a populated table.
+  3. Open DevTools → Console. Confirm no red errors.
+
+- [ ] A word saved via the extension appears in the words table.
+  1. Use the Guide 04 extension to save a word on any webpage.
+  2. Navigate to `http://localhost:3000/dashboard/words`.
+  3. Confirm a table row with that word's text appears.
+
+- [ ] Deleting a word removes it from the table immediately.
+  1. On `/dashboard/words`, click the **Delete** button on any row.
+  2. Confirm the row disappears from the table without a page reload.
+  3. Open DevTools → Network tab. Confirm a `DELETE /api/words?id=...` request completed with status `200`.
+
+- [ ] `/dashboard/review` renders correctly.
+  1. Open `http://localhost:3000/dashboard/review`.
+  2. Confirm you see either a flashcard (word text + "Click to reveal") or the 🎉 **"All done!"** screen.
+  3. Open DevTools → Console. Confirm no red errors.
+
+- [ ] Flashcard flip and grading work.
+  1. On `/dashboard/review`, click the flashcard. Confirm the translation appears and the four grade buttons (**Again / Hard / Good / Easy**) appear below the card.
+  2. Click **Good**. Confirm the card advances (the counter at the top increments, or the "All done!" screen appears).
+  3. Open DevTools → Network tab. Confirm a `PATCH /api/words` request completed with status `200`.
+
+- [ ] SM-2 fields are updated correctly in the database.
+  1. In the Supabase dashboard, open the **SQL Editor** and run:
+     ```sql
+     select next_review_at, review_interval_days, ease_factor
+     from public.saved_words
+     limit 5;
+     ```
+  2. Confirm `next_review_at` is a **future** date.
+  3. Confirm `review_interval_days` is **not** the default `1` (for any word you just graded).
+  4. Confirm `ease_factor` is a float **≥ 1.3**.

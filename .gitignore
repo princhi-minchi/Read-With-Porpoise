@@ -7,3 +7,6 @@ package-lock.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Chrome debug profile (generated at runtime, not source)
+chrome-debug-profile/
