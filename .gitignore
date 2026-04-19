@@ -9,4 +9,7 @@ package-lock.json
 Thumbs.db
 
 # Chrome debug profile (generated at runtime, not source)
+
+# Pitch deck
+pitch-deck/
 chrome-debug-profile/
